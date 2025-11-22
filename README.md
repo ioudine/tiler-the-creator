@@ -8,6 +8,14 @@
 python tiler_cli.py <command> [options]
 ```
 
+### Requirements
+
+- Python 3.9+.
+- [Pillow](https://pillow.readthedocs.io/) for image processing. Install with `pip install pillow`.
+- NumPy is **not** required; all operations rely solely on Pillow.
+
+If you are working inside a virtual environment, install dependencies locally to avoid conflicts with system packages.
+
 Every command accepts an input image path and an output path. Generated files and parent directories are created automatically.
 
 ## Commands and options
@@ -31,6 +39,7 @@ Options:
 - `--max-scale <float>`: Maximum random scale factor applied to the tile. Default: `1.6`.
 - `--seed <int>`: Seed for deterministic randomness. Omit for non-deterministic runs.
 - `--background <color>`: Background color; preserves the image alpha if omitted (e.g., `"#000000"`).
+- `--tile-filter {nearest,bilinear,bicubic,lanczos}`: Resampling filter used when scaling cropped tiles. Default: `lanczos`.
 - `--input-scale <float>`: Uniform scale factor applied to the input before tiling. Provide this **or** both `--input-width` and `--input-height`.
 - `--input-width <int>`/`--input-height <int>`: Dimensions to rescale the input image before tiling.
 - `--input-filter {nearest,bilinear,bicubic,lanczos}`: Resampling filter used for pre-scaling. Default: `lanczos`.
@@ -55,6 +64,7 @@ Options:
 - `--count <int>`: Number of tiles to generate. Default: `5`.
 - `--seed <int>`: Seed for deterministic randomness. Defaults to a new random seed when omitted.
 - `--background <color>`: Background color; preserves the image alpha if omitted.
+- `--tile-filter {nearest,bilinear,bicubic,lanczos}`: Resampling filter used when scaling cropped tiles. Default: `lanczos`.
 - `--input-scale <float>`: Uniform scale factor applied to the input before tiling. Provide this **or** both `--input-width` and `--input-height`.
 - `--input-width <int>`/`--input-height <int>`: Dimensions to rescale the input image before tiling.
 - `--input-filter {nearest,bilinear,bicubic,lanczos}`: Resampling filter used for pre-scaling. Default: `lanczos`.
@@ -82,6 +92,7 @@ Options:
 - `--fps <int>`: Frames per second when encoding the GIF. Default: `6`.
 - `--seed <int>`: Seed for deterministic randomness across frames. Omit for non-deterministic runs.
 - `--background <color>`: Background color; preserves the image alpha if omitted.
+- `--tile-filter {nearest,bilinear,bicubic,lanczos}`: Resampling filter used when scaling cropped tiles. Default: `lanczos`.
 - `--input-scale <float>`: Uniform scale factor applied to the input before tiling. Provide this **or** both `--input-width` and `--input-height`.
 - `--input-width <int>`/`--input-height <int>`: Dimensions to rescale the input image before tiling.
 - `--input-filter {nearest,bilinear,bicubic,lanczos}`: Resampling filter used for pre-scaling. Default: `lanczos`.
