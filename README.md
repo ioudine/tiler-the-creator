@@ -8,6 +8,12 @@
 python tiler_cli.py <command> [options]
 ```
 
+To launch a simple desktop UI for local experimentation, run:
+
+```
+python tiler_gui.py
+```
+
 ### Requirements
 
 - Python 3.9+.
@@ -118,6 +124,19 @@ Options:
 - `--background <color>`: Background color used when padding or filling. Default: `"#000000"`.
 
 If `--scale` is not supplied, you must pass both `--width` and `--height`.
+
+## GUI usage
+`tiler_gui.py` provides a lightweight Tkinter interface for running the same workflows without typing command lines:
+
+1. Start the app with `python tiler_gui.py`.
+2. Choose a mode (`single`, `layers`, `gif`, or `upscale`) from the dropdown.
+3. Browse for an input image and pick an output path (include a file extension).
+4. For `single`/`layers`/`gif`, you can optionally pre-scale the source image (scale or width + height with a chosen filter), adjust tile sizing (fractional tile size or explicit width/height), min/max tile scales, background color, tile filter, and seed.
+5. Mode-specific controls appear automatically:
+   - `layers`: tile count and an optional verbose toggle.
+   - `gif`: number of frames, tiles per frame, FPS, and verbose toggle.
+   - `upscale`: target width/height or uniform scale, resize mode (`fit`/`fill`/`stretch`), filter, and background color.
+6. Click **Run** to generate the output; the app reports success or validation errors in dialogs.
 
 ## Examples
 - Single tile remix using a 25% tile size:
