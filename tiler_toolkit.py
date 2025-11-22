@@ -37,48 +37,6 @@ def _ensure_positive(value: int, name: str) -> int:
     return value
 
 
-def _resolve_resample(filter_name: str) -> int:
-    filter_map = {
-        "nearest": Image.NEAREST,
-        "bilinear": Image.BILINEAR,
-        "bicubic": Image.BICUBIC,
-        "lanczos": Image.LANCZOS,
-    }
-    try:
-        return filter_map[filter_name.lower()]
-    except KeyError as exc:
-        raise ValueError(f"Unknown filter '{filter_name}'") from exc
-
-
-def rescale_image(
-    img: Image.Image,
-    *,
-    width: int | None = None,
-    height: int | None = None,
-    scale: float | None = None,
-    filter_name: str = "lanczos",
-) -> Image.Image:
-    """Resize ``img`` with a uniform scale factor or explicit dimensions."""
-
-    if scale is None and (width is None or height is None):
-        raise ValueError("Provide either scale or both width and height")
-    if scale is not None and (width is not None or height is not None):
-        raise ValueError("Specify either scale or width/height, not both")
-
-    if scale is not None:
-        if scale <= 0:
-            raise ValueError("scale must be positive")
-        width = max(1, int(round(img.size[0] * scale)))
-        height = max(1, int(round(img.size[1] * scale)))
-
-    assert width is not None and height is not None
-    _ensure_positive(width, "width")
-    _ensure_positive(height, "height")
-
-    resample = _resolve_resample(filter_name)
-    return img.resize((width, height), resample=resample)
-
-
 def choose_random_tile_position(img_w: int, img_h: int, tile_w: int, tile_h: int) -> Tuple[int, int, int, int]:
     """Return (left, top, center_x, center_y) for a tile fully inside the image."""
     _ensure_positive(tile_w, "tile_w")
@@ -102,15 +60,13 @@ def crop_and_scale_tile(
     tile_w: int,
     tile_h: int,
     scale: float,
-    *,
-    resample: int = Image.LANCZOS,
 ) -> Image.Image:
     right = left + tile_w
     bottom = top + tile_h
     tile = src_img.crop((left, top, right, bottom))
     new_w = max(1, int(round(tile_w * scale)))
     new_h = max(1, int(round(tile_h * scale)))
-    return tile.resize((new_w, new_h), resample=resample)
+    return tile.resize((new_w, new_h), resample=Image.LANCZOS)
 
 
 def paste_with_center(dest: Image.Image, src: Image.Image, center_x: int, center_y: int):
@@ -163,15 +119,13 @@ def build_single_tile(
     min_scale: float,
     max_scale: float,
     background: str | None,
-    tile_filter: str = "lanczos",
     rng: random.Random | None = None,
 ) -> Image.Image:
     rng = rng or random
     img_w, img_h = src.size
-    resample = _resolve_resample(tile_filter)
     left, top, center_x, center_y = choose_random_tile_position(img_w, img_h, tile_w, tile_h)
     scale = rng.uniform(min_scale, max_scale)
-    tile = crop_and_scale_tile(src, left, top, tile_w, tile_h, scale, resample=resample)
+    tile = crop_and_scale_tile(src, left, top, tile_w, tile_h, scale)
 
     canvas = Image.new("RGBA", (img_w, img_h), (0, 0, 0, 0))
     paste_with_center(canvas, tile, center_x, center_y)
@@ -191,17 +145,15 @@ def build_layered_tiles(
     min_scale: float,
     max_scale: float,
     background: str,
-    tile_filter: str = "lanczos",
     rng: random.Random,
     verbose: bool = False,
 ) -> Image.Image:
     img_w, img_h = src.size
-    resample = _resolve_resample(tile_filter)
     placements: List[TilePlacement] = []
     for idx in range(tile_count):
         left, top, cx, cy = choose_random_tile_position(img_w, img_h, tile_w, tile_h)
         scale = rng.uniform(min_scale, max_scale)
-        tile = crop_and_scale_tile(src, left, top, tile_w, tile_h, scale, resample=resample)
+        tile = crop_and_scale_tile(src, left, top, tile_w, tile_h, scale)
         placements.append(
             TilePlacement(
                 image=flatten_opaque(tile, background),
@@ -236,7 +188,6 @@ def build_animation_frames(
     min_scale: float,
     max_scale: float,
     background: str,
-    tile_filter: str = "lanczos",
     seed: int | None = None,
     verbose: bool = False,
 ) -> List[Image.Image]:
@@ -255,7 +206,6 @@ def build_animation_frames(
             min_scale=min_scale,
             max_scale=max_scale,
             background=background,
-            tile_filter=tile_filter,
             rng=frame_rng,
             verbose=verbose,
         )
@@ -289,7 +239,16 @@ def upscale_image(
     if mode not in {"fit", "fill", "stretch"}:
         raise ValueError("mode must be one of fit|fill|stretch")
 
-    resample = _resolve_resample(filter_name)
+    filter_map = {
+        "nearest": Image.NEAREST,
+        "bilinear": Image.BILINEAR,
+        "bicubic": Image.BICUBIC,
+        "lanczos": Image.LANCZOS,
+    }
+    try:
+        resample = filter_map[filter_name.lower()]
+    except KeyError as exc:
+        raise ValueError(f"Unknown filter '{filter_name}'") from exc
 
     if mode == "stretch":
         return img.resize((width, height), resample=resample)
