@@ -37,48 +37,6 @@ def _ensure_positive(value: int, name: str) -> int:
     return value
 
 
-def _resolve_resample(filter_name: str) -> int:
-    filter_map = {
-        "nearest": Image.NEAREST,
-        "bilinear": Image.BILINEAR,
-        "bicubic": Image.BICUBIC,
-        "lanczos": Image.LANCZOS,
-    }
-    try:
-        return filter_map[filter_name.lower()]
-    except KeyError as exc:
-        raise ValueError(f"Unknown filter '{filter_name}'") from exc
-
-
-def rescale_image(
-    img: Image.Image,
-    *,
-    width: int | None = None,
-    height: int | None = None,
-    scale: float | None = None,
-    filter_name: str = "lanczos",
-) -> Image.Image:
-    """Resize ``img`` with a uniform scale factor or explicit dimensions."""
-
-    if scale is None and (width is None or height is None):
-        raise ValueError("Provide either scale or both width and height")
-    if scale is not None and (width is not None or height is not None):
-        raise ValueError("Specify either scale or width/height, not both")
-
-    if scale is not None:
-        if scale <= 0:
-            raise ValueError("scale must be positive")
-        width = max(1, int(round(img.size[0] * scale)))
-        height = max(1, int(round(img.size[1] * scale)))
-
-    assert width is not None and height is not None
-    _ensure_positive(width, "width")
-    _ensure_positive(height, "height")
-
-    resample = _resolve_resample(filter_name)
-    return img.resize((width, height), resample=resample)
-
-
 def choose_random_tile_position(img_w: int, img_h: int, tile_w: int, tile_h: int) -> Tuple[int, int, int, int]:
     """Return (left, top, center_x, center_y) for a tile fully inside the image."""
     _ensure_positive(tile_w, "tile_w")
@@ -281,7 +239,16 @@ def upscale_image(
     if mode not in {"fit", "fill", "stretch"}:
         raise ValueError("mode must be one of fit|fill|stretch")
 
-    resample = _resolve_resample(filter_name)
+    filter_map = {
+        "nearest": Image.NEAREST,
+        "bilinear": Image.BILINEAR,
+        "bicubic": Image.BICUBIC,
+        "lanczos": Image.LANCZOS,
+    }
+    try:
+        resample = filter_map[filter_name.lower()]
+    except KeyError as exc:
+        raise ValueError(f"Unknown filter '{filter_name}'") from exc
 
     if mode == "stretch":
         return img.resize((width, height), resample=resample)

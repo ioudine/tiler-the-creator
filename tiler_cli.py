@@ -27,19 +27,6 @@ def _parse_tile_size(args: argparse.Namespace, img_size: Tuple[int, int]) -> Tup
     return args.tile_width or base, args.tile_height or base
 
 
-def _load_source_image(args: argparse.Namespace) -> Image.Image:
-    img = Image.open(args.input).convert("RGBA")
-    if args.input_scale is None and args.input_width is None and args.input_height is None:
-        return img
-    return tt.rescale_image(
-        img,
-        width=args.input_width,
-        height=args.input_height,
-        scale=args.input_scale,
-        filter_name=args.input_filter,
-    )
-
-
 def _add_common_tile_args(parser: argparse.ArgumentParser, default_tile_size: float = 0.25):
     parser.add_argument("input", help="Path to input image")
     parser.add_argument("output", help="Path for the generated file")
@@ -55,19 +42,10 @@ def _add_common_tile_args(parser: argparse.ArgumentParser, default_tile_size: fl
     parser.add_argument("--max-scale", type=float, default=1.6)
     parser.add_argument("--seed", type=int)
     parser.add_argument("--background", default=None, help="Optional background color; preserves alpha when omitted")
-    parser.add_argument("--input-scale", type=float, help="Uniform scale factor applied before tiling")
-    parser.add_argument("--input-width", type=int, help="Width to rescale the input image before tiling")
-    parser.add_argument("--input-height", type=int, help="Height to rescale the input image before tiling")
-    parser.add_argument(
-        "--input-filter",
-        choices=["nearest", "bilinear", "bicubic", "lanczos"],
-        default="lanczos",
-        help="Resampling filter used when pre-scaling the input",
-    )
 
 
 def cmd_single(args: argparse.Namespace):
-    img = _load_source_image(args)
+    img = Image.open(args.input).convert("RGBA")
     tile_w, tile_h = _parse_tile_size(args, img.size)
     rng = random.Random(args.seed) if args.seed is not None else None
     result = tt.build_single_tile(
@@ -85,7 +63,7 @@ def cmd_single(args: argparse.Namespace):
 
 
 def cmd_layers(args: argparse.Namespace):
-    img = _load_source_image(args)
+    img = Image.open(args.input).convert("RGBA")
     tile_w, tile_h = _parse_tile_size(args, img.size)
     rng = random.Random(args.seed) if args.seed is not None else random.Random()
     result = tt.build_layered_tiles(
@@ -105,7 +83,7 @@ def cmd_layers(args: argparse.Namespace):
 
 
 def cmd_gif(args: argparse.Namespace):
-    img = _load_source_image(args)
+    img = Image.open(args.input).convert("RGBA")
     tile_w, tile_h = _parse_tile_size(args, img.size)
     frames = tt.build_animation_frames(
         img,
@@ -185,14 +163,6 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None):
     parser = build_parser()
     args = parser.parse_args(argv)
-
-    if args.command in {"single", "layers", "gif"}:
-        if args.input_scale is not None and (
-            args.input_width is not None or args.input_height is not None
-        ):
-            parser.error("Pre-scaling accepts either --input-scale or --input-width/--input-height, not both")
-        if args.input_scale is None and ((args.input_width is None) != (args.input_height is None)):
-            parser.error("Pre-scaling requires both --input-width and --input-height when --input-scale is omitted")
 
     if args.command == "upscale" and not args.scale and (args.width is None or args.height is None):
         parser.error("upscale requires --scale or both --width and --height")
