@@ -191,10 +191,11 @@ def build_layered_tiles(
     min_scale: float,
     max_scale: float,
     background: str,
+    rng: random.Random | None = None,
     tile_filter: str = "lanczos",
-    rng: random.Random,
     verbose: bool = False,
 ) -> Image.Image:
+    rng = rng or random.Random()
     img_w, img_h = src.size
     resample = _resolve_resample(tile_filter)
     placements: List[TilePlacement] = []
