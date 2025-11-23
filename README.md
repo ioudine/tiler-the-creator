@@ -12,6 +12,8 @@ To launch a simple desktop UI for local experimentation, run:
 
 ```
 python tiler_gui.py
+Note: older example/test scripts and utilities have been moved to the `legacy/` folder.
+
 ```
 
 ### Requirements
