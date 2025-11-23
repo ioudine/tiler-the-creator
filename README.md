@@ -128,6 +128,8 @@ If `--scale` is not supplied, you must pass both `--width` and `--height`.
 ## GUI usage
 `tiler_gui.py` provides a lightweight Tkinter interface for running the same workflows without typing command lines:
 
+**Running in Codespaces:** If you're using GitHub Codespaces, see `CODESPACE_GUI.md` for instructions to run the GUI in a browser (noVNC/Xvfb setup and security notes).
+
 1. Start the app with `python tiler_gui.py`.
 2. Choose a mode (`single`, `layers`, `gif`, or `upscale`) from the dropdown.
 3. Browse for an input image and pick an output path (include a file extension).
