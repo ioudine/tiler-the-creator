@@ -66,9 +66,11 @@ if [ "${USE_VNC_PASS}" -ne 0 ]; then
 		x11vnc -storepasswd "$PW" "$VNC_PASS_FILE"
 		echo "Generated VNC password stored at $VNC_PASS_FILE"
 	fi
-	X11VNC_CMD=(x11vnc -display "$DISPLAY_NUM" -rfbauth "$VNC_PASS_FILE" -forever -shared -rfbport "$RFB_PORT")
+	# bind x11vnc to all interfaces so Codespaces can detect and forward the port
+	X11VNC_CMD=(x11vnc -display "$DISPLAY_NUM" -rfbauth "$VNC_PASS_FILE" -forever -shared -rfbport "$RFB_PORT" -listen 0.0.0.0)
 else
-	X11VNC_CMD=(x11vnc -display "$DISPLAY_NUM" -nopw -forever -shared -rfbport "$RFB_PORT")
+	# bind x11vnc to all interfaces when running without password as well
+	X11VNC_CMD=(x11vnc -display "$DISPLAY_NUM" -nopw -forever -shared -rfbport "$RFB_PORT" -listen 0.0.0.0)
 fi
 
 echo "Starting x11vnc"
@@ -87,13 +89,17 @@ if [ "${USE_TLS}" -ne 0 ]; then
 fi
 
 echo "Starting websockify (noVNC) on port $WEB_PORT -> localhost:$RFB_PORT"
+# bind websockify to 0.0.0.0 so Codespaces port detection sees the listening port
 nohup env PYTHONPATH="$WEBSOCKIFY_DIR" \
-	python3 -m websockify "$WEB_PORT" "localhost:$RFB_PORT" "${WEBSOCK_ARGS[@]}" \
+	python3 -m websockify --host=0.0.0.0 "$WEB_PORT" "localhost:$RFB_PORT" "${WEBSOCK_ARGS[@]}" \
 	> /tmp/websockify.log 2>&1 &
 echo $! >> "$PIDS_FILE"
 
 echo "Services started. PIDs saved to $PIDS_FILE"
 echo "Open Codespaces port $WEB_PORT (prefer keeping it private) and visit the noVNC page."
+
+echo "Listening sockets (quick check):"
+ss -ltnp | egrep -A1 ":${RFB_PORT}\b|:${WEB_PORT}\b" || ss -ltnp | grep -E ":${RFB_PORT}|:${WEB_PORT}"
 
 # finally run the GUI in the foreground so the script stays attached
 export DISPLAY="$DISPLAY_NUM"
