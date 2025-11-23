@@ -20,6 +20,7 @@ TMPDIR="${TMPDIR:-/tmp/tiler-vnc}"
 PIDS_FILE="${PIDS_FILE:-/tmp/tiler_gui_pids.txt}"
 USE_VNC_PASS="${USE_VNC_PASS:-1}"
 VNC_PASS_FILE="${VNC_PASS_FILE:-$TMPDIR/passwd}"
+VNC_PASS_PLAINTEXT="${VNC_PASS_PLAINTEXT:-$TMPDIR/vnc_pass.txt}"
 USE_TLS="${USE_TLS:-0}"
 CERT_FILE="${CERT_FILE:-$TMPDIR/cert.pem}"
 KEY_FILE="${KEY_FILE:-$TMPDIR/key.pem}"
@@ -60,12 +61,15 @@ echo $! >> "$PIDS_FILE"
 
 # prepare x11vnc command (with password if requested)
 if [ "${USE_VNC_PASS}" -ne 0 ]; then
-	if [ ! -f "$VNC_PASS_FILE" ]; then
-		echo "Generating VNC password file at $VNC_PASS_FILE"
-		PW=$(openssl rand -base64 12)
-		x11vnc -storepasswd "$PW" "$VNC_PASS_FILE"
-		echo "Generated VNC password stored at $VNC_PASS_FILE"
-	fi
+	# Always generate a fresh random password for the session and store both
+	# the x11vnc hashed passwd and a plain-text helper file for convenience.
+	echo "Generating VNC password (hashed + plain) in $TMPDIR"
+	PW=$(openssl rand -base64 12)
+	x11vnc -storepasswd "$PW" "$VNC_PASS_FILE"
+	# write plain text password for convenience (restricted permissions)
+	printf '%s' "$PW" > "$VNC_PASS_PLAINTEXT"
+	chmod 600 "$VNC_PASS_PLAINTEXT"
+	echo "Wrote hashed password to $VNC_PASS_FILE and plain text helper to $VNC_PASS_PLAINTEXT"
 	X11VNC_CMD=(x11vnc -display "$DISPLAY_NUM" -rfbauth "$VNC_PASS_FILE" -forever -shared -rfbport "$RFB_PORT")
 else
 	X11VNC_CMD=(x11vnc -display "$DISPLAY_NUM" -nopw -forever -shared -rfbport "$RFB_PORT")
