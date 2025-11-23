@@ -160,6 +160,16 @@ If `--scale` is not supplied, you must pass both `--width` and `--height`.
   python tiler_cli.py upscale input.jpg out.png --scale 2 --filter lanczos
   ```
 
+### Convert to black-and-white
+Use the helper script to create a grayscale image or a binary black-and-white version with an optional threshold:
+
+```bash
+python bw_convert.py input.jpg output.png
+
+# Optional: apply a binary threshold (0-255)
+python bw_convert.py input.jpg output.png --threshold 128
+```
+
 ## Notes
 - Randomness can be controlled with `--seed`; omitting it yields a new random layout each run.
 - Transparent backgrounds are preserved when `--background` is not provided.
